@@ -3,6 +3,8 @@ package com.senacelik.data.di
 import android.content.Context
 import androidx.room.Room
 import com.senacelik.data.local.dao.GitHubRepoDao
+import com.senacelik.data.local.dao.RemoteKeysDao
+import com.senacelik.data.local.dao.StarredRepoDao
 import com.senacelik.data.local.database.GitMeHubDatabase
 import com.senacelik.data.remote.GithubApi
 import com.senacelik.data.repository.GitHubRepositoryImpl
@@ -36,7 +38,9 @@ object DataModule {
             context,
             GitMeHubDatabase::class.java,
             "gitmehub_db"
-        ).build()
+        )
+        .fallbackToDestructiveMigration() // Handle database changes during development
+        .build()
     }
 
     @Provides
@@ -47,8 +51,26 @@ object DataModule {
 
     @Provides
     @Singleton
+    fun provideRemoteKeysDao(database: GitMeHubDatabase): RemoteKeysDao {
+        return database.remoteKeysDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideStarredRepoDao(database: GitMeHubDatabase): StarredRepoDao {
+        return database.starredRepoDao()
+    }
+
+    @Provides
+    @Singleton
     fun provideOkHttpClient(): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .addHeader("User-Agent", "GitMeHub-App")
+                    .build()
+                chain.proceed(request)
+            }
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })
@@ -71,8 +93,8 @@ object DataModule {
     @Singleton
     fun provideGitHubRepository(
         api: GithubApi,
-        dao: GitHubRepoDao
+        database: GitMeHubDatabase
     ): GitHubRepository {
-        return GitHubRepositoryImpl(api, dao)
+        return GitHubRepositoryImpl(api, database)
     }
 }

@@ -17,5 +17,6 @@ kotlin {
 
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.paging.common)
     testImplementation(libs.kotlinx.coroutines.test)
 }

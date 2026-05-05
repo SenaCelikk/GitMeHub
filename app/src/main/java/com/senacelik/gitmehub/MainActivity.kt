@@ -48,38 +48,40 @@ class MainActivity : ComponentActivity() {
 fun MainScreen() {
     val navController = rememberNavController()
 
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val showBottomBar = currentRoute != Screen.Detail.route
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp
-            ) {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentRoute = navBackStackEntry?.destination?.route
-
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    label = { Text("Search") },
-                    selected = currentRoute == Screen.RepoList.route,
-                    onClick = {
-                        // Senior tip: Use popUpTo to avoid building a massive stack
-                        navController.navigate(Screen.RepoList.route) {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
+            if (showBottomBar) {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 8.dp
+                ) {
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        label = { Text("Search") },
+                        selected = currentRoute == Screen.RepoList.route,
+                        onClick = {
+                            navController.navigate(Screen.RepoList.route) {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
                         }
-                    }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Star, contentDescription = null) },
-                    label = { Text("Starred") },
-                    selected = currentRoute == Screen.Starred.route,
-                    onClick = {
-                        navController.navigate(Screen.Starred.route) {
-                            launchSingleTop = true
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Star, contentDescription = null) },
+                        label = { Text("Starred") },
+                        selected = currentRoute == Screen.Starred.route,
+                        onClick = {
+                            navController.navigate(Screen.Starred.route) {
+                                launchSingleTop = true
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     ) { paddingValues ->

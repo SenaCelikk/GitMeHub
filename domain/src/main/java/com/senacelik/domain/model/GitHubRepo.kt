@@ -7,5 +7,6 @@ data class GitHubRepo(
     val url: String,
     val stargazersCount: Int,
     val description: String? = null,
-    val language: String? = null
+    val language: String? = null,
+    val isStarred: Boolean = false
 )

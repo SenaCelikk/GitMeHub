@@ -16,6 +16,10 @@ import com.senacelik.gitmehub.presentation.repolist.RepoListViewModel
 import com.senacelik.gitmehub.screens.RepoListScreen
 import androidx.navigation.navArgument
 
+import com.senacelik.gitmehub.presentation.starred.StarredViewModel
+import com.senacelik.gitmehub.screens.RepoDetailScreen
+import com.senacelik.gitmehub.screens.StarredScreen
+
 @Composable
 fun GitMeHubNavGraph(
     navController: NavHostController,
@@ -36,8 +40,13 @@ fun GitMeHubNavGraph(
         }
 
         composable(route = Screen.Starred.route) {
-            // StarredScreen will eventually go here
-            Box(Modifier.fillMaxSize()) { Text("Starred Page Coming Soon", Modifier.align(Alignment.Center)) }
+            val viewModel: StarredViewModel = hiltViewModel()
+            StarredScreen(
+                viewModel = viewModel,
+                onNavigateToDetail = { url ->
+                    navController.navigate(Screen.Detail.passUrl(url))
+                }
+            )
         }
 
         composable(
@@ -48,7 +57,10 @@ fun GitMeHubNavGraph(
         ) { backStackEntry ->
             // Extract the URL and show the Detail Screen
             val url = backStackEntry.arguments?.getString("url") ?: ""
-            //RepoDetailScreen(url = url)
+            RepoDetailScreen(
+                url = url,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

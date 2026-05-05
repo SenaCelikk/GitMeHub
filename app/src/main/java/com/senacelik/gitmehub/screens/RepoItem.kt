@@ -11,9 +11,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults.cardElevation
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +29,8 @@ import com.senacelik.domain.model.GitHubRepo
 @Composable
 fun RepoItem(
     repo: GitHubRepo,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onStarClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -41,7 +44,7 @@ fun RepoItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = repo.name, style = MaterialTheme.typography.headlineLarge)
+                Text(text = repo.name, style = MaterialTheme.typography.titleLarge)
                 Text(
                     text = repo.description ?: "No description",
                     style = MaterialTheme.typography.bodyMedium,
@@ -50,12 +53,21 @@ fun RepoItem(
                 )
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Star, contentDescription = null, tint = Color.Yellow)
+                    Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFD700))
                     Text(text = " ${repo.stargazersCount}")
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(text = repo.language ?: "Mixed")
                 }
             }
+            
+            IconButton(onClick = onStarClick) {
+                Icon(
+                    imageVector = if (repo.isStarred) Icons.Filled.Star else Icons.Outlined.Star,
+                    contentDescription = if (repo.isStarred) "Unstar" else "Star",
+                    tint = if (repo.isStarred) Color(0xFFFFD700) else Color.Gray
+                )
+            }
+            
             Icon(Icons.Default.KeyboardArrowRight, contentDescription = null)
         }
     }

@@ -2,11 +2,21 @@ package com.senacelik.gitmehub.presentation.repolist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import com.senacelik.domain.model.GitHubRepo
 import com.senacelik.domain.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -16,53 +26,32 @@ class RepoListViewModel @Inject constructor(
     private val repository: GitHubRepository
 ) : ViewModel() {
 
-    // The single source of truth for the UI
     private val _state = MutableStateFlow(RepoListState())
     val state: StateFlow<RepoListState> = _state.asStateFlow()
 
-    init {
-        // Start observing the local database immediately
-        observeRepositories()
-        // Trigger an initial search
-        processIntent(RepoListIntent.Search(_state.value.searchQuery))
-    }
+    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+    val pagingDataFlow: Flow<PagingData<GitHubRepo>> = _state
+        .map { it.searchQuery }
+        .distinctUntilChanged()
+        .debounce(500L) // Back to 500ms to avoid excessive updates while typing
+        .flatMapLatest { query ->
+            if (query.isBlank()) {
+                // Return empty paging data if query is blank
+                kotlinx.coroutines.flow.flowOf(PagingData.empty())
+            } else {
+                repository.getSearchResultStream(query)
+            }
+        }
+        .cachedIn(viewModelScope)
 
-    // The single entry point for all UI actions
     fun processIntent(intent: RepoListIntent) {
         when (intent) {
             is RepoListIntent.Search -> {
                 _state.update { it.copy(searchQuery = intent.query) }
-                performSearch(intent.query)
             }
-            is RepoListIntent.RefreshList -> {
-                performSearch(_state.value.searchQuery)
-            }
-        }
-    }
-
-    private fun observeRepositories() {
-        viewModelScope.launch {
-            // This Flow comes from Room. It updates automatically when the DB changes.
-            repository.getRepositories()
-                .collect { repos ->
-                    _state.update { it.copy(repositories = repos) }
-                }
-        }
-    }
-
-    private fun performSearch(query: String) {
-        if (query.isBlank()) return
-
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
-
-            try {
-                // Fetch from network -> Save to Room -> observeRepositories() auto-updates UI
-                repository.searchRepositories(query)
-                _state.update { it.copy(isLoading = false) }
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(isLoading = false, error = e.localizedMessage ?: "Unknown error")
+            is RepoListIntent.ToggleStar -> {
+                viewModelScope.launch {
+                    repository.toggleStar(intent.repo)
                 }
             }
         }
