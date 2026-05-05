@@ -73,7 +73,7 @@ fun MainScreen() {
                     )
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Star, contentDescription = null) },
-                        label = { Text("Starred") },
+                        label = { Text("Favorites") },
                         selected = currentRoute == Screen.Starred.route,
                         onClick = {
                             navController.navigate(Screen.Starred.route) {
